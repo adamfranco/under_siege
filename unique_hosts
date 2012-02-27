@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+
+# generate a list of unique hosts from the list of input URLs.
+
+@hosts = ();
+
+sub in_array
+ {
+     my ($arr,$search_for) = @_;
+     my %items = map {$_ => 1} @$arr;
+     return (exists($items{$search_for}))?1:0;
+ }
+
+while (<>) {
+	my $line = /https?:\/\/([^:\/]+)/i;
+	$line =~ $host_regex;
+	if (!in_array(\@hosts, $1)) {
+		push (@hosts, lc($1));
+	}
+}
+
+@hosts = sort { 
+	my $a_comp = join('.', reverse(split(/\./, $a)));
+	my $b_comp = join('.', reverse(split(/\./, $b)));
+	
+	return $a_comp cmp $b_comp;
+} @hosts;
+
+foreach (@hosts) {
+	print $_ . "\n";
+}
+
