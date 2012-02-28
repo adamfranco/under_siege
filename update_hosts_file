@@ -95,7 +95,13 @@ sub prompt_user {
   return $input ? $input : $default;
 }
 
-tie @hostsFile, 'Tie::File', '/etc/hosts' or die "Couldn't open /etc/hosts";
+# If we aren't going to modify /etc/hosts, just open it as read-only
+if ($YES_FOR_ALL == -1) {
+	use Fcntl 'O_RDONLY';
+	tie @hostsFile, 'Tie::File', '/etc/hosts', mode => O_RDONLY or die "Couldn't open /etc/hosts";
+} else {
+	tie @hostsFile, 'Tie::File', '/etc/hosts' or die "Couldn't open /etc/hosts";
+}
 
 # Find the start of our host list, ignoring any hosts listed before.
 foreach my $i (0..$#hostsFile) {

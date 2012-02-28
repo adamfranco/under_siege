@@ -100,4 +100,8 @@ while (<>) {
 }
 close OUTPUT;
 
-system "cat $TEST_FILE | unique_hosts | update_hosts_file $update_hosts_file_args";
+if (-w '/etc/hosts' || $YES_FOR_ALL == -1) {
+	system "cat $TEST_FILE | unique_hosts | update_hosts_file $update_hosts_file_args";
+} else {
+	system "cat $TEST_FILE | unique_hosts | sudo update_hosts_file $update_hosts_file_args";
+}
