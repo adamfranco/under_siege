@@ -12,7 +12,7 @@ use Getopt::Std;
 my $usage = '
 
 Usage:
-	'.$0.' [-h] [-f testfile]
+	'.$0.' [-h] [-f testfile] [-b] [-c CONCURRENT] [-C] [-r REPS] [-R RC] [-d DELAY]
 	
 	-h  Display this help.
 	-f  File path for list of URLs to test.
