@@ -2,9 +2,9 @@ Under Siege
 ===========
 
 Under Siege (us_*) is a collection of perl scripts for setting up and running 
-load-tests using the Siege load-testing program. Siege has the ability to take
-as input a list of URLs to test. We can use this (with a little data massaging) to
-do a basic replay of traffic found in our log files.
+load-tests using the [Siege load-testing program](http://www.joedog.org/siege-home/).
+Siege has the ability to take as input a list of URLs to test. We can use this 
+(with a little data massaging) to do a basic replay of traffic found in our log files.
 
 The process is broken up into two components: setting up the test host, and 
 running the test.
@@ -34,9 +34,34 @@ If you log file has a different format, edit lines 97-99 of `us_prepare_test_url
 to fit your file format. Similarly, you may wish to edit `us_filter_urls` to exclude
 certain URLs from your test set.
 
+Installation
+-------------
+
+1. Clone the repository to your test client
+
+        git clone git://github.com/adamfranco/under_siege.git /usr/local/src/under_siege
+    
+2. Add the Under Siege scripts to your path either by updating your path:
+
+        export PATH=$PATH:/usr/local/src/under_siege
+    
+   Or, by making symbolic links to the scripts in your bin/ directory:
+   
+        cd /usr/local/bin
+        ln -s /usr/local/src/under_siege/us_filter_urls
+        ln -s /usr/local/src/under_siege/us_prepare_test_urls
+        ln -s /usr/local/src/under_siege/us_run_test
+        ln -s /usr/local/src/under_siege/us_unique_hosts
+        ln -s /usr/local/src/under_siege/us_update_hosts_file
+    
+3. (Optional) Add a `.under_siege` configuration file to your home directory 
+   (see below for options).
+
 Setting up the test
 -------------------
-Run `us_prepare_test_urls` with your log files as input:
+
+1. Copy your log file to your test client.
+2. Run `us_prepare_test_urls` with your log files as input:
     
     us_prepare_test_urls /path/to/varnishncsa.log
 
