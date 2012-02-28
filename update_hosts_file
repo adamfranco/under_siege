@@ -1,0 +1,106 @@
+#!/usr/bin/perl -w
+
+# Update the /etc/hosts file to include all of the IP address in the piped input.
+
+my $config;
+if (-e ".under_siege") {
+	$config = ".under_siege";
+} elsif (-e "$ENV{HOME}/.under_siege") {
+	$config = "$ENV{HOME}/.under_siege";
+} else {
+	print STDERR "No configuration found in either of\n";
+	print STDERR "\t.under_siege\n\t$ENV{HOME}/.under_siege\n";
+	print STDERR "\nConfiguration should include a definition of \$IP such as:\n\t\$IP = '140.233.4.221';\n\n";
+	exit(1);
+}
+
+do $config;
+
+if (!defined($IP)) {
+	print STDERR "\$IP was not defined in $config\n";
+	print STDERR "\nConfiguration should include a definition of \$IP such as:\n\t\$IP = '140.233.4.221';\n\n";
+	exit(3);
+}
+if ($IP !~ /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/) {
+	print STDERR "Invalid IP address `$IP` defined in $config\n";
+	print STDERR "\nConfiguration should include a definition of \$IP such as:\n\t\$IP = '140.233.4.221';\n\n";
+	exit(3);
+}
+my $ipRegex = "^".$IP;
+$ipRegex =~ s/\./\\./g;
+
+use Tie::File;
+
+sub in_array
+ {
+     my ($arr,$search_for) = @_;
+     my %items = map {$_ => 1} @$arr;
+     return (exists($items{$search_for}))?1:0;
+ }
+
+tie @hostsFile, 'Tie::File', '/etc/hosts' or die "Couldn't open /etc/hosts";
+
+# Find the start of our host list, ignoring any hosts listed before.
+foreach my $i (0..$#hostsFile) {
+	if ($hostsFile[$i] =~ /# under siege hosts/) {
+		$hostMarker = $i;
+	}
+}
+if (!defined($hostMarker)) {
+	$hostMarker = scalar(@hostsFile);
+	push(@hostsFile, "# under siege hosts");
+}
+
+my @hosts = ();
+while (<>) {
+	my $host = $_;
+	$host =~ s/\n//;
+	if ($host =~ /^[a-z0-9\.]+$/) {
+		push(@hosts, $host);
+	}
+}
+
+# Add or update hosts
+foreach $host (@hosts) {
+	my $hostRegex = $host;
+	my $found = 0;
+	$hostRegex =~ s/\./\\./g;
+# 	print "`$hostRegex`\n";
+	foreach my $j (($hostMarker + 1)..$#hostsFile) {
+		if ($hostsFile[$j] =~ /$hostRegex/) {
+			$found = 1;
+			
+			# check IP
+			if ($hostsFile[$j] !~ /$ipRegex/) {
+				$hostsFile[$j] = "$IP	$host";
+				print STDERR "Updated IP to `$IP	$host` in /etc/hosts\n";
+			}
+			
+			last;
+		}
+	}
+	
+	# Add
+	if (!$found) {
+		push(@hostsFile, "$IP	$host");
+		print STDERR "Added `$IP	$host` to /etc/hosts\n";
+	}
+}
+
+# Remove unneeded hosts
+my $j = $hostMarker + 1;
+while ($j < scalar(@hostsFile)) {
+	if ($hostsFile[$j] =~ /^[0-9\.]+\s+([a-z0-9\.]+)$/) {
+		if (in_array(\@hosts, $1)) {
+			$j++;
+		} else {
+			print STDERR "Removed `".$hostsFile[$j]."` from /etc/hosts\n";
+			splice(@hostsFile, $j, 1);
+		}
+	} else {
+		$j++;
+	}
+}
+
+untie @hostsFile
+
