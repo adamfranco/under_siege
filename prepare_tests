@@ -1,0 +1,88 @@
+#!/usr/bin/perl -w
+
+# Given a log file or files extract and filter entries to a test file and set up
+# apropriate entries in /etc/hosts
+
+##########################################
+# Configuration
+##########################################
+
+use Getopt::Std;
+
+my $usage = '
+
+Usage:
+	'.$0.' [-f testfile] [-i ip-address] [-y|-n] <log files>
+
+Configuration:
+	A configuration file named .under_siege can be placed in the current directory
+	or in your home directory. Command-line arguments can be used to override
+	config entries.
+	
+	$TEST_FILE  (string) The file path where the test file will be output.
+	                     Example: $TEST_FILE = \'/tmp/under_siege_test_urls.txt\';
+	                     
+	$IP         (string) The IP address of the test web host. Will be added to the
+	                     /etc/hosts file for each hostname in the test file.
+	                     Example: $IP = \'140.233.4.221\';
+	                     
+	$YES_FOR_ALL (int)   If nil or 0, you will be prompted for all /etc/hosts changes.
+	                     If 1, all /etc/hosts changes will be applied without prompt.
+	                     If -1, all /etc/hosts changes will be skipped without prompt.
+';
+
+our($opt_y, $opt_n, $opt_i, $opt_f);
+getopts ('ynf:i:');
+
+# Load our configs.
+my $config;
+$config = "$ENV{HOME}/.under_siege";
+do $config;
+$config = ".under_siege";
+do $config;
+
+if (defined($opt_f) && $opt_f =~ /.+/) {
+	$TEST_FILE = $opt_f;
+}
+if (!defined($TEST_FILE)) {
+	print STDERR "\$TEST_FILE was not defined in the config or passed as an argument.";
+	print STDERR $usage;
+	exit(3);
+}
+
+$update_hosts_file_args = '';
+if ($opt_y) {
+	$YES_FOR_ALL = 1;
+	$update_hosts_file_args .= ' -y';
+}
+if ($opt_n) {
+	$YES_FOR_ALL = -1;
+	$update_hosts_file_args .= ' -n';
+}
+if (!defined($YES_FOR_ALL)) {
+	$YES_FOR_ALL = 0;
+}
+
+if (defined($opt_i) && $opt_i =~ /.+/) {
+	$IP = $opt_i;
+	$update_hosts_file_args .= ' -i '.$opt_i;
+}
+if (!defined($IP)) {
+	print STDERR "\$IP was not defined in the config or passed as an argument.";
+	print STDERR $usage;
+	exit(3);
+}
+
+##########################################
+# Execution
+##########################################
+
+open OUTPUT, "| filter_urls > $TEST_FILE";
+while (<>) {
+	if ($_ =~ /"GET (http:\/\/[^\s]+)/) {
+		print OUTPUT "$1\n";
+	}
+}
+close OUTPUT;
+
+system "cat $TEST_FILE | unique_hosts | update_hosts_file $update_hosts_file_args";
