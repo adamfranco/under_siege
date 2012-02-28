@@ -92,7 +92,7 @@ if (!defined($IP)) {
 # Execution
 ##########################################
 
-open OUTPUT, "| filter_urls > $TEST_FILE";
+open OUTPUT, "| us_filter_urls > $TEST_FILE";
 while (<>) {
 	if ($_ =~ /"GET (http:\/\/[^\s]+)/) {
 		print OUTPUT "$1\n";
@@ -101,7 +101,7 @@ while (<>) {
 close OUTPUT;
 
 if (-w '/etc/hosts' || $YES_FOR_ALL == -1) {
-	system "cat $TEST_FILE | unique_hosts | update_hosts_file $update_hosts_file_args";
+	system "cat $TEST_FILE | us_unique_hosts | us_update_hosts_file $update_hosts_file_args";
 } else {
-	system "cat $TEST_FILE | unique_hosts | sudo update_hosts_file $update_hosts_file_args";
+	system "cat $TEST_FILE | us_unique_hosts | sudo us_update_hosts_file $update_hosts_file_args";
 }
