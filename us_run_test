@@ -1,0 +1,90 @@
+#!/usr/bin/perl -w
+
+# Given a log file or files extract and filter entries to a test file and set up
+# apropriate entries in /etc/hosts
+
+##########################################
+# Configuration
+##########################################
+
+use Getopt::Std;
+
+my $usage = '
+
+Usage:
+	'.$0.' [-h] [-f testfile]
+	
+	-h  Display this help.
+	-f  File path for list of URLs to test.
+	-b  BENCHMARK, signifies no delay for time testing.
+	-c  CONCURRENT users, default is 10
+	-C  CONFIGURATION, show the current siege configuration.
+	-r  REPS, number of times to run the test, default is 25
+	-R  RC, change the siegerc file to file.  Overrides
+        the SIEGERC environmental variable.
+    -d  Time DELAY, random delay between 1 and num designed
+        to simulate human activity. Default value is 3
+
+Configuration:
+	A configuration file named .under_siege can be placed in the current directory
+	or in your home directory. Command-line arguments can be used to override
+	config entries.
+	
+	$TEST_FILE  (string) The file path where the test file will be output.
+	                     Example: $TEST_FILE = \'/tmp/under_siege_test_urls.txt\';
+	
+	$SIEGE_ARGS (string) command-line arguments to pass to siege.
+	                     Example: $SIEGE_ARGS = \'-c 25 -v\';
+
+';
+
+our($opt_h, $opt_f, $opt_b, $opt_c, $opt_C, $opt_r, $opt_R, $opt_d);
+getopts ('hf:bc:Cr:R:d:');
+
+if ($opt_h) {
+	print STDERR $usage;
+	exit 1;
+}
+
+$SIEGE_ARGS = '';
+
+# Load our configs.
+my $config;
+$config = "$ENV{HOME}/.under_siege";
+do $config;
+$config = ".under_siege";
+do $config;
+
+if (defined($opt_f) && $opt_f =~ /.+/) {
+	$TEST_FILE = $opt_f;
+}
+if (!defined($TEST_FILE)) {
+	print STDERR "\$TEST_FILE was not defined in the config or passed as an argument.";
+	print STDERR $usage;
+	exit(3);
+}
+
+if ($opt_b) {
+	$SIEGE_ARGS .= " -b";
+}
+if ($opt_c) {
+	$SIEGE_ARGS .= " -c $opt_c";
+}
+if ($opt_C) {
+	$SIEGE_ARGS .= " -C";
+}
+if ($opt_r) {
+	$SIEGE_ARGS .= " -r $opt_r";
+}
+if ($opt_R) {
+	$SIEGE_ARGS .= " -R $opt_R";
+}
+if ($opt_d) {
+	$SIEGE_ARGS .= " -d $opt_d";
+}
+
+##########################################
+# Execution
+##########################################
+
+system "siege -f $TEST_FILE -H \"Cookie: TESTCOOKIE=1234\" $SIEGE_ARGS";
