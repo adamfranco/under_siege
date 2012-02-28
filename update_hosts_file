@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl -w -s
 
 # Update the /etc/hosts file to include all of the IP address in the piped input.
 
@@ -29,6 +29,14 @@ if ($IP !~ /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/) {
 my $ipRegex = "^".$IP;
 $ipRegex =~ s/\./\\./g;
 
+# Accept arguments from the command line.
+if (defined($y)) {
+	$YES_FOR_ALL = 1;
+}
+if (!defined($YES_FOR_ALL)) {
+	$YES_FOR_ALL = 0;
+}
+
 use Tie::File;
 
 sub in_array
@@ -37,6 +45,16 @@ sub in_array
      my %items = map {$_ => 1} @$arr;
      return (exists($items{$search_for}))?1:0;
  }
+ 
+sub prompt_user {
+  my($prompt, $default) = @_;
+  my $defaultValue = $default ? "[$default]" : "";
+  open TTY, '<', '/dev/tty';
+  print "$prompt $defaultValue: ";
+  chomp(my $input = <TTY>);
+  close TTY;
+  return $input ? $input : $default;
+}
 
 tie @hostsFile, 'Tie::File', '/etc/hosts' or die "Couldn't open /etc/hosts";
 
@@ -52,13 +70,14 @@ if (!defined($hostMarker)) {
 }
 
 my @hosts = ();
-while (<>) {
+while (<STDIN>) {
 	my $host = $_;
 	$host =~ s/\n//;
 	if ($host =~ /^[a-z0-9\.]+$/) {
 		push(@hosts, $host);
 	}
 }
+close STDIN;
 
 # Add or update hosts
 foreach $host (@hosts) {
@@ -72,18 +91,27 @@ foreach $host (@hosts) {
 			
 			# check IP
 			if ($hostsFile[$j] !~ /$ipRegex/) {
-				$hostsFile[$j] = "$IP	$host";
-				print STDERR "Updated IP to `$IP	$host` in /etc/hosts\n";
+				if (!$YES_FOR_ALL) {
+					$update = prompt_user("Update IP to `$IP	$host` in /etc/hosts? (y/n)", 'y');
+				}
+				if ($YES_FOR_ALL || $update =~ /^y/) {
+					$hostsFile[$j] = "$IP	$host";
+					print STDERR "Updated IP to `$IP	$host` in /etc/hosts\n";
+				}
 			}
-			
 			last;
 		}
 	}
 	
 	# Add
 	if (!$found) {
-		push(@hostsFile, "$IP	$host");
-		print STDERR "Added `$IP	$host` to /etc/hosts\n";
+		if (!$YES_FOR_ALL) {
+			$update = prompt_user("Add `$IP	$host` to /etc/hosts? (y/n)", 'y');
+		}
+		if ($YES_FOR_ALL || $update =~ /^y/) {
+			push(@hostsFile, "$IP	$host");
+			print STDERR "Added `$IP	$host` to /etc/hosts\n";
+		}
 	}
 }
 
@@ -94,8 +122,16 @@ while ($j < scalar(@hostsFile)) {
 		if (in_array(\@hosts, $1)) {
 			$j++;
 		} else {
-			print STDERR "Removed `".$hostsFile[$j]."` from /etc/hosts\n";
-			splice(@hostsFile, $j, 1);
+			if (!$YES_FOR_ALL) {
+				$update = prompt_user("Remove `".$hostsFile[$j]."` from /etc/hosts? (y/n)", 'y');
+			}
+			if ($YES_FOR_ALL || $update =~ /^y/) {
+				print STDERR "Removed `".$hostsFile[$j]."` from /etc/hosts\n";
+				splice(@hostsFile, $j, 1);
+			} else {
+				$j++;
+			}
+			
 		}
 	} else {
 		$j++;
