@@ -1,6 +1,8 @@
-#!/usr/bin/perl -w -s
+#!/usr/bin/perl -w
 
 # Update the /etc/hosts file to include all of the IP address in the piped input.
+
+use Getopt::Std;
 
 my $config;
 if (-e ".under_siege") {
@@ -30,8 +32,12 @@ my $ipRegex = "^".$IP;
 $ipRegex =~ s/\./\\./g;
 
 # Accept arguments from the command line.
-if (defined($y)) {
+getopts ('yn');
+if ($opt_y && $opt_y) {
 	$YES_FOR_ALL = 1;
+}
+if ($opt_n && $opt_n) {
+	$YES_FOR_ALL = -1;
 }
 if (!defined($YES_FOR_ALL)) {
 	$YES_FOR_ALL = 0;
@@ -91,10 +97,13 @@ foreach $host (@hosts) {
 			
 			# check IP
 			if ($hostsFile[$j] !~ /$ipRegex/) {
-				if (!$YES_FOR_ALL) {
+				if ($YES_FOR_ALL == 0) {
 					$update = prompt_user("Update IP to `$IP	$host` in /etc/hosts? (y/n)", 'y');
+				} elsif ($YES_FOR_ALL < 0) {
+					print "Update IP to `$IP	$host` in /etc/hosts? (y/n): n\n";
+					$update = 'n';
 				}
-				if ($YES_FOR_ALL || $update =~ /^y/) {
+				if ($YES_FOR_ALL > 0 || $update =~ /^y/) {
 					$hostsFile[$j] = "$IP	$host";
 					print STDERR "Updated IP to `$IP	$host` in /etc/hosts\n";
 				}
@@ -105,10 +114,13 @@ foreach $host (@hosts) {
 	
 	# Add
 	if (!$found) {
-		if (!$YES_FOR_ALL) {
+		if ($YES_FOR_ALL == 0) {
 			$update = prompt_user("Add `$IP	$host` to /etc/hosts? (y/n)", 'y');
+		} elsif ($YES_FOR_ALL < 0) {
+			print "Add `$IP	$host` to /etc/hosts? (y/n): n\n";
+			$update = 'n';
 		}
-		if ($YES_FOR_ALL || $update =~ /^y/) {
+		if ($YES_FOR_ALL > 0 || $update =~ /^y/) {
 			push(@hostsFile, "$IP	$host");
 			print STDERR "Added `$IP	$host` to /etc/hosts\n";
 		}
@@ -122,10 +134,13 @@ while ($j < scalar(@hostsFile)) {
 		if (in_array(\@hosts, $1)) {
 			$j++;
 		} else {
-			if (!$YES_FOR_ALL) {
+			if ($YES_FOR_ALL == 0) {
 				$update = prompt_user("Remove `".$hostsFile[$j]."` from /etc/hosts? (y/n)", 'y');
+			} elsif ($YES_FOR_ALL < 0) {
+				print "Remove `".$hostsFile[$j]."` from /etc/hosts? (y/n): n\n";
+				$update = 'n';
 			}
-			if ($YES_FOR_ALL || $update =~ /^y/) {
+			if ($YES_FOR_ALL > 0 || $update =~ /^y/) {
 				print STDERR "Removed `".$hostsFile[$j]."` from /etc/hosts\n";
 				splice(@hostsFile, $j, 1);
 			} else {
