@@ -12,13 +12,15 @@ use Getopt::Std;
 my $usage = '
 
 Usage:
-	'.$0.' [-h] [-f testfile] [-i ip-address] [-y|-n] <log files>
+	'.$0.' [-h] [-f testfile] [-i ip-address] [-y|-n] [-r] <log files>
 	
 	-h  Display this help.
 	-f  File path for test URL list output.
 	-i  The IP address of the testing host to add to the /etc/hosts file.
 	-y  Apply changes to /etc/hosts without prompting.
 	-n  Skip changes to /etc/hosts without prompting.
+	-r  Remove hosts that are no longer in the host list. Useful if your hosts
+        file is getting bloated.
 	
 	<log files>  Varnish or Apache log files in something close to the Apache 
 	             "combined" format.
@@ -39,10 +41,15 @@ Configuration:
 	                     If 1, all /etc/hosts changes will be applied without prompt.
 	                     If -1, all /etc/hosts changes will be skipped without prompt.
 
+	$REMOVE_HOSTS (int)  If 0 (default), new hosts in the list will be added to the
+	                     /etc/hosts file, but existing entries will be left in place.
+	                     If 1, the hosts file will be pruned to just the hosts in the
+	                     list.
+
 ';
 
-our($opt_h, $opt_y, $opt_n, $opt_i, $opt_f);
-getopts ('hynf:i:');
+our($opt_h, $opt_y, $opt_n, $opt_i, $opt_f, $opt_r);
+getopts ('hynrf:i:');
 
 if ($opt_h) {
 	print STDERR $usage;
@@ -74,6 +81,14 @@ if ($opt_n) {
 }
 if (!defined($YES_FOR_ALL)) {
 	$YES_FOR_ALL = 0;
+}
+
+if ($opt_r) {
+    $REMOVE_HOSTS = 1;
+    $update_hosts_file_args .= ' -r';
+}
+if (!defined($REMOVE_HOSTS)) {
+	$REMOVE_HOSTS = 0;
 }
 
 if (defined($opt_i) && $opt_i =~ /.+/) {

@@ -86,6 +86,8 @@ via DNS.
         -i  The IP address of the testing host to add to the /etc/hosts file.
         -y  Apply changes to /etc/hosts without prompting.
         -n  Skip changes to /etc/hosts without prompting.
+        -r  Remove hosts that are no longer in the host list. Useful if your hosts
+            file is getting bloated.
         
         <log files>  Varnish or Apache log files in something close to the Apache 
                      "combined" format.
@@ -106,6 +108,10 @@ via DNS.
                              If 1, all /etc/hosts changes will be applied without prompt.
                              If -1, all /etc/hosts changes will be skipped without prompt.
 
+        $REMOVE_HOSTS (int)  If 0 (default), new hosts in the list will be added to the
+                             /etc/hosts file, but existing entries will be left in place.
+                             If 1, the hosts file will be pruned to just the hosts in the
+                             list.
 
 Running the test
 ----------------
