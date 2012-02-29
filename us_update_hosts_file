@@ -21,9 +21,9 @@ Usage:
 	<hostname list>  A list of host names, one per line in files or piped to STDIN.
 	
 Configuration:
-	A configuration file named .under_siege can be placed in the current directory
-	or in your home directory. Command-line arguments can be used to override
-	config entries.
+	A configuration file named .under_siege can be placed in the current directory or 
+	in your home directory, or configuration can be put at /etc/under_siege. 
+	Command-line arguments can be used to override config entries.
 	
 	$IP         (string) The IP address of the test web host. Will be added to the
 	                     /etc/hosts file for each hostname in the test file.
@@ -44,11 +44,9 @@ if ($opt_h) {
 }
 
 # Load our configs.
-my $config;
-$config = "$ENV{HOME}/.under_siege";
-do $config;
-$config = ".under_siege";
-do $config;
+do "/etc/under_siege";
+do "$ENV{HOME}/.under_siege";
+do ".under_siege";
 
 if ($opt_y) {
 	$YES_FOR_ALL = 1;

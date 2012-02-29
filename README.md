@@ -45,7 +45,7 @@ Installation
 
         export PATH=$PATH:/usr/local/src/under_siege
     
-   Or, by making symbolic links to the scripts in your bin/ directory:
+    Or, by making symbolic links to the scripts in your bin/ directory:
    
         cd /usr/local/bin
         ln -s /usr/local/src/under_siege/us_filter_urls
@@ -54,8 +54,9 @@ Installation
         ln -s /usr/local/src/under_siege/us_unique_hosts
         ln -s /usr/local/src/under_siege/us_update_hosts_file
     
-3. (Optional) Add a `.under_siege` configuration file to your home directory 
-   (see below for options).
+3. (Optional) Add a `.under_siege` configuration file to your home directory or 
+   the current directory. System defaults can be specified in a file 
+   at /etc/under_siege. See below for configuration options.
 
 Setting up the test
 -------------------

@@ -26,9 +26,9 @@ Usage:
         to simulate human activity. Default value is 3
 
 Configuration:
-	A configuration file named .under_siege can be placed in the current directory
-	or in your home directory. Command-line arguments can be used to override
-	config entries.
+	A configuration file named .under_siege can be placed in the current directory or 
+	in your home directory, or configuration can be put at /etc/under_siege. 
+	Command-line arguments can be used to override config entries.
 	
 	$TEST_FILE  (string) The file path where the test file will be output.
 	                     Example: $TEST_FILE = \'/tmp/under_siege_test_urls.txt\';
@@ -49,11 +49,9 @@ if ($opt_h) {
 $SIEGE_ARGS = '';
 
 # Load our configs.
-my $config;
-$config = "$ENV{HOME}/.under_siege";
-do $config;
-$config = ".under_siege";
-do $config;
+do "/etc/under_siege";
+do "$ENV{HOME}/.under_siege";
+do ".under_siege";
 
 if (defined($opt_f) && $opt_f =~ /.+/) {
 	$TEST_FILE = $opt_f;
